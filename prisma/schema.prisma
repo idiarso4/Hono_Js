@@ -1,0 +1,200 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          String    // "ADMIN" | "TEACHER" | "STUDENT" | "COUNSELOR"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Common fields
+  profileImage  String?
+  phoneNumber   String?
+  address       String?
+  
+  // Student specific fields
+  nis           String?   @unique
+  class         String?
+  
+  // Teacher specific fields
+  nip           String?   @unique
+  subjects      Subject[]
+  
+  // Relations
+  attendances         Attendance[]
+  teacherJournals     TeacherJournal[]
+  pklJournals         PklJournal[]
+  extracurriculars    ExtracurricularMember[]
+  prayers             Prayer[]
+  permissions         Permission[]
+  counselingSessions  CounselingSession[]   @relation("Counselor")
+  studentSessions     CounselingSession[]   @relation("Student")
+  homeVisits          HomeVisit[]
+  damageReports       DamageReport[]
+}
+
+model Subject {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  teachers      User[]
+  journals      TeacherJournal[]
+}
+
+model Attendance {
+  id            String    @id @default(uuid())
+  userId        String
+  date          DateTime
+  type          String    // "FACE" | "QR" | "PHOTO"
+  status        String    // "PRESENT" | "LATE" | "ABSENT"
+  location      String?
+  photo         String?
+  qrCode        String?
+  createdAt     DateTime  @default(now())
+  
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+model TeacherJournal {
+  id            String    @id @default(uuid())
+  teacherId     String
+  subjectId     String
+  date          DateTime
+  topic         String
+  description   String
+  materials     String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  teacher       User      @relation(fields: [teacherId], references: [id])
+  subject       Subject   @relation(fields: [subjectId], references: [id])
+}
+
+model PklJournal {
+  id            String    @id @default(uuid())
+  studentId     String
+  date          DateTime
+  activity      String
+  description   String
+  documentation String?
+  status        String    // "PENDING" | "APPROVED" | "REJECTED"
+  feedback      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  student       User      @relation(fields: [studentId], references: [id])
+}
+
+model Extracurricular {
+  id            String    @id @default(uuid())
+  name          String
+  description   String
+  schedule      String
+  location      String
+  members       ExtracurricularMember[]
+}
+
+model ExtracurricularMember {
+  id                String          @id @default(uuid())
+  userId           String
+  extracurricularId String
+  joinDate         DateTime        @default(now())
+  status           String          // "ACTIVE" | "INACTIVE"
+  achievements     String?
+  
+  user             User            @relation(fields: [userId], references: [id])
+  extracurricular  Extracurricular @relation(fields: [extracurricularId], references: [id])
+}
+
+model Prayer {
+  id            String    @id @default(uuid())
+  userId        String
+  date          DateTime
+  prayerTime    String    // "FAJR" | "DHUHR" | "ASR" | "MAGHRIB" | "ISHA"
+  status        String    // "PRESENT" | "ABSENT"
+  location      String?
+  
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+model Permission {
+  id            String    @id @default(uuid())
+  userId        String
+  type          String    // "ENTRY" | "EXIT"
+  reason        String
+  startTime     DateTime
+  endTime       DateTime
+  status        String    // "PENDING" | "APPROVED" | "REJECTED"
+  approvedBy    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+model DamageReport {
+  id            String    @id @default(uuid())
+  userId        String
+  itemName      String
+  location      String
+  description   String
+  photo         String?
+  status        String    // "PENDING" | "IN_PROGRESS" | "COMPLETED"
+  repairCost    Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+model CounselingSession {
+  id            String    @id @default(uuid())
+  counselorId   String
+  studentId     String
+  date          DateTime
+  type          String    // "ACADEMIC" | "BEHAVIORAL" | "CAREER" | "PERSONAL"
+  description   String
+  notes         String?
+  followUp      String?
+  status        String    // "SCHEDULED" | "COMPLETED" | "CANCELLED"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  counselor     User      @relation("Counselor", fields: [counselorId], references: [id])
+  student       User      @relation("Student", fields: [studentId], references: [id])
+}
+
+model HomeVisit {
+  id            String    @id @default(uuid())
+  counselorId   String
+  studentId     String
+  date          DateTime
+  purpose       String
+  findings      String
+  recommendations String?
+  followUp      String?
+  status        String    // "PLANNED" | "COMPLETED" | "CANCELLED"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  counselor     User      @relation(fields: [counselorId], references: [id])
+}
+
+model Backup {
+  id            String    @id @default(uuid())
+  filename      String
+  size          Int
+  type          String    // "AUTOMATIC" | "MANUAL"
+  status        String    // "SUCCESS" | "FAILED"
+  createdAt     DateTime  @default(now())
+}
