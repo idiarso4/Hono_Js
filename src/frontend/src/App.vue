@@ -1,85 +1,99 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import MainLayout from '@/layouts/MainLayout.vue'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+// Setup axios defaults
+axios.defaults.baseURL = 'http://localhost:3000'
+
+onMounted(async () => {
+  // Check authentication status
+  const isAuthenticated = await authStore.checkAuth()
+  if (!isAuthenticated && !router.currentRoute.value.path.startsWith('/auth')) {
+    router.push('/login')
+  }
+})
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <MainLayout>
+    <RouterView />
+  </MainLayout>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+<style>
+@import '@/assets/base.css';
+
+#app {
+  @apply min-h-screen bg-gray-50;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.btn {
+  @apply px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+.btn-primary {
+  @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.btn-secondary {
+  @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500;
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+.form-input {
+  @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500;
 }
 
-nav a:first-of-type {
-  border: 0;
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
+.card {
+  @apply bg-white rounded-lg shadow-sm p-6;
+}
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+.table {
+  @apply min-w-full divide-y divide-gray-200;
+}
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.table th {
+  @apply px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
 
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
+.table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+}
 
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.table tr {
+  @apply hover:bg-gray-50;
+}
+
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-green-100 text-green-800;
+}
+
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.badge-danger {
+  @apply bg-red-100 text-red-800;
+}
+
+.badge-info {
+  @apply bg-blue-100 text-blue-800;
 }
 </style>

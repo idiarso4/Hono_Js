@@ -32,9 +32,10 @@
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           >
             <option value="">All Status</option>
-            <option value="planned">Planned</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="PLANNED">Planned</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="RESCHEDULED">Rescheduled</option>
           </select>
         </div>
       </div>
@@ -67,13 +68,13 @@
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div>
-                  <div class="text-sm font-medium text-gray-900">{{ visit.studentName }}</div>
+                  <div class="text-sm font-medium text-gray-900">{{ visit.student.name }}</div>
                   <div class="text-sm text-gray-500">{{ visit.studentId }}</div>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ formatDate(visit.scheduledDate) }}</div>
+              <div class="text-sm text-gray-900">{{ formatDate(visit.date) }}</div>
             </td>
             <td class="px-6 py-4">
               <div class="text-sm text-gray-900">{{ visit.purpose }}</div>
@@ -82,9 +83,10 @@
               <span
                 :class="{
                   'px-2 inline-flex text-xs leading-5 font-semibold rounded-full': true,
-                  'bg-green-100 text-green-800': visit.status === 'completed',
-                  'bg-yellow-100 text-yellow-800': visit.status === 'planned',
-                  'bg-red-100 text-red-800': visit.status === 'cancelled'
+                  'bg-green-100 text-green-800': visit.status === 'COMPLETED',
+                  'bg-yellow-100 text-yellow-800': visit.status === 'PLANNED',
+                  'bg-red-100 text-red-800': visit.status === 'CANCELLED',
+                  'bg-blue-100 text-blue-800': visit.status === 'RESCHEDULED'
                 }"
               >
                 {{ visit.status }}
@@ -117,7 +119,7 @@
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Student</label>
                 <input
-                  v-model="visitForm.studentName"
+                  v-model="currentVisit.studentId"
                   type="text"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   required
@@ -126,7 +128,7 @@
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Date</label>
                 <input
-                  v-model="visitForm.scheduledDate"
+                  v-model="currentVisit.date"
                   type="date"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   required
@@ -135,22 +137,66 @@
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Purpose</label>
                 <textarea
-                  v-model="visitForm.purpose"
+                  v-model="currentVisit.purpose"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   rows="3"
                   required
                 ></textarea>
               </div>
               <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Parent Name</label>
+                <input
+                  v-model="currentVisit.parentName"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Address</label>
+                <textarea
+                  v-model="currentVisit.address"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  rows="3"
+                  required
+                ></textarea>
+              </div>
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Findings</label>
+                <textarea
+                  v-model="currentVisit.findings"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  rows="3"
+                  required
+                ></textarea>
+              </div>
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Recommendations</label>
+                <textarea
+                  v-model="currentVisit.recommendations"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Follow-up Actions</label>
+                <textarea
+                  v-model="currentVisit.followUpActions"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Status</label>
                 <select
-                  v-model="visitForm.status"
+                  v-model="currentVisit.status"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   required
                 >
-                  <option value="planned">Planned</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="PLANNED">Planned</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                  <option value="RESCHEDULED">Rescheduled</option>
                 </select>
               </div>
               <div class="flex justify-end space-x-3">
@@ -180,35 +226,50 @@
 import { ref, computed } from 'vue'
 import { useHomeVisitStore } from '@/stores/homeVisit'
 import { storeToRefs } from 'pinia'
+import type { HomeVisit } from '@/stores/homeVisit'
 import dayjs from 'dayjs'
+
+interface VisitFormData {
+  studentId: string
+  date: string
+  purpose: string
+  parentName: string
+  address: string
+  findings: string
+  recommendations: string
+  followUpActions: string
+  status: 'PLANNED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED'
+}
 
 const homeVisitStore = useHomeVisitStore()
 const { visits } = storeToRefs(homeVisitStore)
 
-// Search and filter states
-const searchQuery = ref('')
-const dateRange = ref({
-  start: '',
-  end: ''
-})
-const filterStatus = ref('')
-
-// Modal states
-const showModal = ref(false)
-const editingVisit = ref(null)
-const visitForm = ref({
-  studentName: '',
+const currentVisit = ref<VisitFormData>({
   studentId: '',
-  scheduledDate: '',
+  date: '',
   purpose: '',
-  status: 'planned'
+  parentName: '',
+  address: '',
+  findings: '',
+  recommendations: '',
+  followUpActions: '',
+  status: 'PLANNED'
 })
 
-// Computed properties
+const selectedPhotos = ref<Array<{ file: File; preview: string }>>([])
+const selectedDocuments = ref<Array<File>>([])
+
+const showModal = ref(false)
+const editingVisit = ref<HomeVisit | null>(null)
+
+const searchQuery = ref('')
+const dateRange = ref({ start: '' })
+const filterStatus = ref<HomeVisit['status'] | ''>('')
+
 const filteredVisits = computed(() => {
-  return visits.value.filter(visit => {
+  return visits.value.filter((visit: HomeVisit) => {
     const matchesSearch = searchQuery.value
-      ? visit.studentName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      ? visit.student.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
         visit.studentId.includes(searchQuery.value)
       : true
 
@@ -217,60 +278,83 @@ const filteredVisits = computed(() => {
       : true
 
     const matchesDate = dateRange.value.start
-      ? dayjs(visit.scheduledDate).isAfter(dateRange.value.start)
+      ? dayjs(visit.date).isAfter(dateRange.value.start)
       : true
 
     return matchesSearch && matchesStatus && matchesDate
   })
 })
 
-// Methods
 const formatDate = (date: string) => {
-  return dayjs(date).format('MMMM D, YYYY')
+  return dayjs(date).format('DD/MM/YYYY')
 }
 
 const openNewVisitModal = () => {
   editingVisit.value = null
-  visitForm.value = {
-    studentName: '',
+  currentVisit.value = {
     studentId: '',
-    scheduledDate: '',
+    date: '',
     purpose: '',
-    status: 'planned'
+    parentName: '',
+    address: '',
+    findings: '',
+    recommendations: '',
+    followUpActions: '',
+    status: 'PLANNED'
   }
   showModal.value = true
 }
 
-const editVisit = (visit: any) => {
+const editVisit = (visit: HomeVisit) => {
   editingVisit.value = visit
-  visitForm.value = { ...visit }
+  currentVisit.value = {
+    studentId: visit.studentId,
+    date: visit.date,
+    purpose: visit.purpose,
+    parentName: visit.parentName,
+    address: visit.address,
+    findings: visit.findings,
+    recommendations: visit.recommendations || '',
+    followUpActions: visit.followUpActions || '',
+    status: visit.status
+  }
   showModal.value = true
 }
 
-const viewDetails = (visit: any) => {
-  // Implement view details logic
+const viewDetails = (visit: HomeVisit) => {
   console.log('Viewing details for visit:', visit)
 }
 
 const closeModal = () => {
   showModal.value = false
   editingVisit.value = null
+  selectedPhotos.value = []
+  selectedDocuments.value = []
 }
 
 const saveVisit = async () => {
+  const formData = new FormData()
+  
+  formData.append('visitData', JSON.stringify(currentVisit.value))
+  
+  selectedPhotos.value.forEach((photo, index) => {
+    formData.append(`photos[${index}]`, photo.file)
+  })
+  
+  selectedDocuments.value.forEach((doc, index) => {
+    formData.append(`documents[${index}]`, doc)
+  })
+  
   try {
     if (editingVisit.value) {
-      await homeVisitStore.updateVisit({
-        ...visitForm.value,
-        id: editingVisit.value.id
-      })
+      await homeVisitStore.updateVisit(editingVisit.value.id, formData)
     } else {
-      await homeVisitStore.createVisit(visitForm.value)
+      await homeVisitStore.createVisit(formData)
     }
+    
     closeModal()
   } catch (error) {
-    console.error('Error saving visit:', error)
-    // Implement error handling
+    console.error('Failed to save visit:', error)
   }
 }
 </script>

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import { ref } from 'vue'
 
-interface HomeVisit {
+export interface HomeVisit {
   id: string
   studentId: string
   counselorId: string
@@ -58,7 +58,7 @@ export const useHomeVisitStore = defineStore('homeVisit', () => {
   }
 
   // Create new home visit
-  const createVisit = async (data: Omit<HomeVisit, 'id' | 'counselorId' | 'createdAt' | 'updatedAt' | 'student'>) => {
+  const createVisit = async (data: FormData | Omit<HomeVisit, 'id' | 'counselorId' | 'createdAt' | 'updatedAt' | 'student'>) => {
     try {
       loading.value = true
       const response = await axios.post('/api/home-visits', data)
@@ -73,7 +73,7 @@ export const useHomeVisitStore = defineStore('homeVisit', () => {
   }
 
   // Update home visit
-  const updateVisit = async (id: string, data: Partial<HomeVisit>) => {
+  const updateVisit = async (id: string, data: FormData | Partial<HomeVisit>) => {
     try {
       loading.value = true
       const response = await axios.put(`/api/home-visits/${id}`, data)
@@ -188,6 +188,34 @@ export const useHomeVisitStore = defineStore('homeVisit', () => {
     }
   }
 
+  // Get visit statistics
+  const getStatistics = async () => {
+    try {
+      loading.value = true
+      const response = await axios.get('/api/home-visits/statistics')
+      return {
+        totalVisits: response.data.total,
+        completed: response.data.completed,
+        planned: response.data.planned,
+        thisMonth: response.data.thisMonth
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.error || 'Failed to fetch statistics'
+      throw error.value
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Send notification
+  const sendNotification = async (visitId: string, type: 'SCHEDULED' | 'UPDATED' | 'CANCELLED') => {
+    try {
+      await axios.post(`/api/home-visits/${visitId}/notify`, { type })
+    } catch (err: any) {
+      console.error('Failed to send notification:', err)
+    }
+  }
+
   return {
     visits,
     loading,
@@ -199,6 +227,8 @@ export const useHomeVisitStore = defineStore('homeVisit', () => {
     uploadPhotos,
     uploadDocuments,
     getVisitStats,
-    searchStudents
+    searchStudents,
+    getStatistics,
+    sendNotification
   }
 })

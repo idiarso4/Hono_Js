@@ -1,360 +1,245 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <!-- Header -->
-    <header class="bg-white shadow">
-      <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center">
-          <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <div class="flex space-x-4">
-            <button
-              @click="triggerBackup"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <i class="fas fa-database mr-2"></i>
-              Backup System
-            </button>
-            <button
-              @click="refreshData"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-            >
-              <i class="fas fa-sync-alt mr-2"></i>
-              Refresh Data
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <!-- System Health Card -->
-      <div v-if="systemHealth" class="mb-8">
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="flex items-center">
-                <div :class="{
-                  'w-4 h-4 rounded-full mr-2': true,
-                  'bg-green-500': systemHealth.status === 'healthy',
-                  'bg-yellow-500': systemHealth.status === 'degraded',
-                  'bg-red-500': systemHealth.status === 'down'
-                }"></div>
-                <span class="text-sm font-medium text-gray-500">System Status:</span>
-                <span class="ml-2 text-sm font-semibold">{{ systemHealth.status }}</span>
-              </div>
-              <div>
-                <span class="text-sm font-medium text-gray-500">Uptime:</span>
-                <span class="ml-2 text-sm font-semibold">{{ formatUptime(systemHealth.uptime) }}</span>
-              </div>
-              <div>
-                <span class="text-sm font-medium text-gray-500">Storage:</span>
-                <span class="ml-2 text-sm font-semibold">
-                  {{ formatStorage(systemHealth.storageUsed) }} / {{ formatStorage(systemHealth.totalStorage) }}
-                </span>
-              </div>
-              <div>
-                <span class="text-sm font-medium text-gray-500">Active Users:</span>
-                <span class="ml-2 text-sm font-semibold">{{ systemHealth.activeUsers }}</span>
+  <div class="py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
+    </div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <!-- Loading State -->
+      <div v-if="loading" class="mt-6">
+        <div class="animate-pulse">
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div v-for="n in 4" :key="n" class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-5">
+                <div class="bg-gray-200 h-4 w-1/3 mb-4 rounded"></div>
+                <div class="bg-gray-200 h-8 w-1/2 rounded"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Statistics Grid -->
-      <div v-if="stats" class="mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Users Stats -->
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <i class="fas fa-users text-2xl text-indigo-600"></i>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                    <dd class="flex items-baseline">
-                      <div class="text-2xl font-semibold text-gray-900">{{ stats.users.total }}</div>
-                      <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                        <i class="fas fa-arrow-up"></i>
-                        <span class="ml-1">{{ stats.users.newThisMonth }} this month</span>
-                      </div>
-                    </dd>
-                  </dl>
-                  <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
-                    <div>
-                      <span class="text-gray-500">Students:</span>
-                      <span class="font-medium">{{ stats.users.students }}</span>
-                    </div>
-                    <div>
-                      <span class="text-gray-500">Teachers:</span>
-                      <span class="font-medium">{{ stats.users.teachers }}</span>
-                    </div>
-                    <div>
-                      <span class="text-gray-500">Staff:</span>
-                      <span class="font-medium">{{ stats.users.staff }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <!-- Error State -->
+      <div v-else-if="error" class="mt-6">
+        <div class="bg-red-50 border-l-4 border-red-400 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-red-700">
+                {{ error }}
+              </p>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Attendance Stats -->
+      <!-- Dashboard Content -->
+      <div v-else class="mt-6">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <!-- Total Students -->
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <i class="fas fa-clock text-2xl text-blue-600"></i>
+                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Today's Attendance</dt>
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                      Total Students
+                    </dt>
                     <dd class="flex items-baseline">
                       <div class="text-2xl font-semibold text-gray-900">
-                        {{ stats.attendance.presentToday }}
-                      </div>
-                      <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                        <span>{{ Math.round(stats.attendance.averageAttendance * 100) }}% avg</span>
+                        {{ stats.totalStudents }}
                       </div>
                     </dd>
                   </dl>
-                  <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span class="text-gray-500">Absent:</span>
-                      <span class="font-medium">{{ stats.attendance.absentToday }}</span>
-                    </div>
-                    <div>
-                      <span class="text-gray-500">Late:</span>
-                      <span class="font-medium">{{ stats.attendance.lateToday }}</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Inventory Stats -->
+          <!-- Total Teachers -->
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <i class="fas fa-box text-2xl text-yellow-600"></i>
+                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                  </svg>
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Inventory Status</dt>
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                      Total Teachers
+                    </dt>
                     <dd class="flex items-baseline">
                       <div class="text-2xl font-semibold text-gray-900">
-                        {{ stats.inventory.totalItems }}
-                      </div>
-                      <div class="ml-2 flex items-baseline text-sm font-semibold text-red-600">
-                        <span>{{ stats.inventory.damagedItems }} damaged</span>
+                        {{ stats.totalTeachers }}
                       </div>
                     </dd>
                   </dl>
-                  <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span class="text-gray-500">Pending Repairs:</span>
-                      <span class="font-medium">{{ stats.inventory.pendingRepairs }}</span>
-                    </div>
-                    <div>
-                      <span class="text-gray-500">Repair Costs:</span>
-                      <span class="font-medium">${{ stats.inventory.repairCosts }}</span>
-                    </div>
-                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's Attendance -->
+          <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                      Today's Attendance
+                    </dt>
+                    <dd class="flex items-baseline">
+                      <div class="text-2xl font-semibold text-gray-900">
+                        {{ stats.attendanceToday }}
+                      </div>
+                      <p class="ml-2 flex items-baseline text-sm font-semibold text-red-600">
+                        {{ stats.absentToday }} absent
+                      </p>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Requests -->
+          <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                      Pending Requests
+                    </dt>
+                    <dd class="flex items-baseline">
+                      <div class="text-2xl font-semibold text-gray-900">
+                        {{ stats.pendingLeaves + stats.pendingHomeVisits }}
+                      </div>
+                      <p class="ml-2 flex items-baseline text-sm font-semibold">
+                        <span class="text-yellow-600">{{ stats.pendingLeaves }} leaves</span>
+                        <span class="mx-2">|</span>
+                        <span class="text-blue-600">{{ stats.pendingHomeVisits }} visits</span>
+                      </p>
+                    </dd>
+                  </dl>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Activity Logs -->
-      <div class="mb-8">
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
-          </div>
-          <div class="px-4 py-5 sm:p-6">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Time
-                    </th>
-                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
-                    </th>
-                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Details
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="log in activityLogs" :key="log.id">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ formatDate(log.timestamp) }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-gray-900">{{ log.userName }}</div>
-                      <div class="text-sm text-gray-500">{{ log.ipAddress }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                        :class="getActionClass(log.action)">
-                        {{ log.action }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-500">
-                      {{ log.details }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <!-- Quick Actions -->
+        <div class="mt-8">
+          <h2 class="text-lg leading-6 font-medium text-gray-900">Quick Actions</h2>
+          <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <button
+              class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-12 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              @click="$router.push('/admin/users/new')"
+            >
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              <span class="mt-2 block text-sm font-medium text-gray-900">
+                Add New User
+              </span>
+            </button>
+
+            <button
+              class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-12 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              @click="$router.push('/admin/attendance')"
+            >
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              <span class="mt-2 block text-sm font-medium text-gray-900">
+                View Attendance
+              </span>
+            </button>
+
+            <button
+              class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-12 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              @click="$router.push('/admin/reports')"
+            >
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="mt-2 block text-sm font-medium text-gray-900">
+                Generate Reports
+              </span>
+            </button>
           </div>
         </div>
       </div>
-
-      <!-- Performance Charts -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <div class="bg-white shadow rounded-lg p-4">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">System Load</h3>
-          <canvas ref="systemLoadChart"></canvas>
-        </div>
-        <div class="bg-white shadow rounded-lg p-4">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">User Activity</h3>
-          <canvas ref="userActivityChart"></canvas>
-        </div>
-      </div>
-    </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { useAdminDashboardStore } from '@/stores/adminDashboard'
-import { storeToRefs } from 'pinia'
-import dayjs from 'dayjs'
-import Chart from 'chart.js/auto'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 
-const adminDashboardStore = useAdminDashboardStore()
-const { stats, activityLogs, systemHealth } = storeToRefs(adminDashboardStore)
+const authStore = useAuthStore()
 
-const systemLoadChart = ref<HTMLCanvasElement | null>(null)
-const userActivityChart = ref<HTMLCanvasElement | null>(null)
-let systemLoadChartInstance: Chart | null = null
-let userActivityChartInstance: Chart | null = null
-
-// Methods
-const formatUptime = (seconds: number) => {
-  const days = Math.floor(seconds / 86400)
-  const hours = Math.floor((seconds % 86400) / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  return `${days}d ${hours}h ${minutes}m`
+interface DashboardStats {
+  totalStudents: number
+  totalTeachers: number
+  totalCounselors: number
+  attendanceToday: number
+  absentToday: number
+  pendingLeaves: number
+  pendingHomeVisits: number
 }
 
-const formatStorage = (bytes: number) => {
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-  if (bytes === 0) return '0 Byte'
-  const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)).toString())
-  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
-}
+const stats = ref<DashboardStats>({
+  totalStudents: 0,
+  totalTeachers: 0,
+  totalCounselors: 0,
+  attendanceToday: 0,
+  absentToday: 0,
+  pendingLeaves: 0,
+  pendingHomeVisits: 0
+})
 
-const formatDate = (date: string) => {
-  return dayjs(date).format('MMM D, YYYY HH:mm')
-}
+const loading = ref(true)
+const error = ref('')
 
-const getActionClass = (action: string) => {
-  const classes = {
-    'LOGIN': 'bg-green-100 text-green-800',
-    'LOGOUT': 'bg-gray-100 text-gray-800',
-    'CREATE': 'bg-blue-100 text-blue-800',
-    'UPDATE': 'bg-yellow-100 text-yellow-800',
-    'DELETE': 'bg-red-100 text-red-800'
-  }
-  return classes[action] || 'bg-gray-100 text-gray-800'
-}
-
-const initCharts = async () => {
-  const metrics = await adminDashboardStore.getPerformanceMetrics('day')
-  
-  if (systemLoadChart.value) {
-    systemLoadChartInstance?.destroy()
-    systemLoadChartInstance = new Chart(systemLoadChart.value, {
-      type: 'line',
-      data: {
-        labels: metrics.systemLoad.map(d => dayjs(d.timestamp).format('HH:mm')),
-        datasets: [{
-          label: 'System Load',
-          data: metrics.systemLoad.map(d => d.value),
-          borderColor: 'rgb(99, 102, 241)',
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
-    })
-  }
-
-  if (userActivityChart.value) {
-    userActivityChartInstance?.destroy()
-    userActivityChartInstance = new Chart(userActivityChart.value, {
-      type: 'bar',
-      data: {
-        labels: metrics.userActivity.map(d => dayjs(d.timestamp).format('HH:mm')),
-        datasets: [{
-          label: 'Active Users',
-          data: metrics.userActivity.map(d => d.value),
-          backgroundColor: 'rgb(59, 130, 246)',
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
-    })
-  }
-}
-
-const refreshData = async () => {
-  await Promise.all([
-    adminDashboardStore.fetchStats(),
-    adminDashboardStore.fetchActivityLogs({ limit: 10 }),
-    adminDashboardStore.fetchSystemHealth()
-  ])
-  await initCharts()
-}
-
-const triggerBackup = async () => {
+const fetchDashboardStats = async () => {
   try {
-    await adminDashboardStore.triggerBackup()
-    // Add notification of success
-  } catch (error) {
-    // Add error handling
-    console.error('Backup failed:', error)
+    loading.value = true
+    const response = await axios.get('/api/admin/dashboard/stats')
+    stats.value = response.data
+  } catch (err) {
+    error.value = 'Failed to load dashboard statistics'
+    console.error('Dashboard stats error:', err)
+  } finally {
+    loading.value = false
   }
 }
 
-// Lifecycle hooks
-onMounted(async () => {
-  await refreshData()
-  // Refresh data every 5 minutes
-  setInterval(refreshData, 300000)
+onMounted(() => {
+  fetchDashboardStats()
 })
 </script>
